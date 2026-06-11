@@ -9,25 +9,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from access_dependency_analyzer.utils.path_utils import (
+    is_unc_path,
+    normalize_access_path,
+)
+
 logger = logging.getLogger("access_dependency_analyzer.readers.file_resolver")
 
-UNC_PREFIXES = ("\\\\", "//")
-
-
-def is_unc_path(path: Path) -> bool:
-    """UNC パスかどうかを判定する。"""
-    return path.as_posix().startswith("//") or str(path).startswith("\\\\")
-
-
-def normalize_access_path(file_path: str | Path) -> Path:
-    """Access ファイルパスを正規化する（UNC は resolve しない）。"""
-    path = Path(file_path)
-    if is_unc_path(path):
-        return path
-    try:
-        return path.resolve()
-    except OSError:
-        return path.absolute()
+__all__ = ["is_unc_path", "normalize_access_path", "local_access_file"]
 
 
 @contextmanager

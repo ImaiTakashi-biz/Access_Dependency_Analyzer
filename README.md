@@ -50,9 +50,23 @@ Access_Dependency_Analyzer/
 | OS | Windows 10 以降 |
 | Python | **3.12 のみ**（3.12.x） |
 | パッケージ管理 | [uv](https://github.com/astral-sh/uv)（推奨）または pip |
-| 推奨コンポーネント | [Microsoft Access Database Engine (ACE)](https://www.microsoft.com/en-us/download/details.aspx?id=54920) 2016 以降 |
+| **必須（リンク解析）** | [Microsoft Access Database Engine (ACE)](https://www.microsoft.com/en-us/download/details.aspx?id=54920) 2016 以降 |
+| フォールバック | pyodbc（ACE 未導入時のみ。機能制限あり） |
 
-ACE を導入すると、DAO 経由でリンクテーブルの接続文字列やクエリ SQL を安定して取得できます。  
+### DAO（ACE）が必須な理由
+
+本ツールの核心機能である **リンクテーブル解析・ファイル間依存関係の構築** は、DAO（ACE）接続が前提です。
+
+| 機能 | DAO（ACE） | pyodbc のみ |
+|---|---|---|
+| テーブル名・フィールド | ○ | ○ |
+| リンク接続文字列・リンク先 DB | ○ | × |
+| クエリ SQL 全文 | ○ | △（制限あり） |
+| フォーム / レポート | ○ | × |
+| ファイル間依存グラフ | ○ | ×（リンク未検出） |
+
+ACE 未導入環境では pyodbc にフォールバックしますが、**PostgreSQL 移行の依存関係調査には不十分**です。  
+必ず ACE（64bit / 32bit は Python のビット数に合わせる）をインストールしてください。  
 Access Runtime 自体は不要です。
 
 ### 環境変数
@@ -132,6 +146,12 @@ python -m access_dependency_analyzer --merge-retry
 - 再解析入力（既定）: `output/retry_analysis/`
 - `report_for_ai.md` / 各 CSV / 依存関係図を再生成します
 
+特定ファイルだけ上書き統合する場合（ファイル名のみ指定）:
+
+```powershell
+python -m access_dependency_analyzer --merge-retry --merge-files "QRモニタDB.accdb" "セット予定材料管理.accdb"
+```
+
 ## 出力ファイル
 
 `output/analysis/` フォルダに以下を生成します。
@@ -146,8 +166,9 @@ python -m access_dependency_analyzer --merge-retry
 | `vba_modules.csv` | VBAモジュール一覧 |
 | `relationship.md` | 上流/中間/下流の整理 |
 | `dependency_graph.mmd` | Mermaid 依存関係図 |
-| `dependency_graph.html` | ブラウザ表示用依存関係図 |
+| `dependency_graph.html` | ブラウザ表示用依存関係図（オフライン対応、`mermaid.min.js` 同梱） |
 | `report_for_ai.md` | AI への引き渡し用レポート |
+| `_INCOMPLETE.txt` | 解析エラーあり時のみ出力される警告ファイル |
 
 ## PostgreSQL 移行での使い方
 
@@ -170,11 +191,13 @@ pytest
 ## 制約・注意事項
 
 - Windows 専用です（DAO / pyodbc 前提）
-- ACE 未導入環境では解析範囲が限定されます
-- pyodbc モードではリンク接続文字列が取得できない場合があります
+- **リンク依存関係の解析には ACE（DAO）が必須**です（pyodbc のみでは不十分）
+- ACE 未導入環境ではテーブル一覧のみ取得され、移行設計に必要な依存情報が欠落します
 - VBA は pyOpenVBA / DAO / oletools の順で抽出を試行します
 - DAO 利用時は Access の「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」設定が必要な場合があります
 - `output/` 配下は解析のたびに上書き生成されます（`.gitignore` 対象）
+- 一部ファイルでエラーがある場合、`_INCOMPLETE.txt` が出力されます（移行設計前に要確認）
+- `dependency_graph.html` は `assets/vendor/mermaid.min.js` を同梱コピーしてオフライン表示に対応します
 
 ## 依存ライブラリ
 

@@ -8,6 +8,7 @@ from access_dependency_analyzer.analyzers.dependency_analyzer import DependencyG
 from access_dependency_analyzer.exporters.ai_report_exporter import export_ai_report
 from access_dependency_analyzer.exporters.csv_exporter import export_csv_files
 from access_dependency_analyzer.exporters.html_exporter import export_html
+from access_dependency_analyzer.exporters.incomplete_marker import export_incomplete_marker
 from access_dependency_analyzer.exporters.markdown_exporter import export_relationship_markdown
 from access_dependency_analyzer.exporters.mermaid_exporter import export_mermaid
 from access_dependency_analyzer.core.models import AnalysisResult
@@ -31,4 +32,5 @@ class ExportService:
         export_mermaid(graph, target_dir)
         export_html(result, target_dir)
         export_ai_report(result, graph, target_dir)
+        export_incomplete_marker(result, target_dir)
         return target_dir

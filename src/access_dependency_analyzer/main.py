@@ -41,10 +41,23 @@ def run_gui(workspace_dir: Path) -> None:
     webview.start(bind_file_drop, window, gui="edgechromium")
 
 
-def run_merge_retry(base_output: Path, retry_output: Path) -> int:
+def run_merge_retry(
+    base_output: Path,
+    retry_output: Path,
+    merge_files: list[str] | None = None,
+) -> int:
     """再解析結果をメイン出力へ統合する。"""
+    replace_names = frozenset(merge_files) if merge_files else None
     service = MergeService()
-    result = service.merge_retry_into_base(base_output, retry_output)
+    try:
+        result = service.merge_retry_into_base(
+            base_output,
+            retry_output,
+            replace_file_names=replace_names,
+        )
+    except (FileNotFoundError, ValueError) as error:
+        print(f"統合エラー: {error}")
+        return 1
     print(f"統合先: {base_output.resolve()}")
     print(f"Accessファイル数: {len(result.source_files)}")
     print(f"テーブル: {len(result.tables)}")
@@ -100,6 +113,15 @@ def main() -> None:
         default="output/retry_analysis",
         help="再解析 CSV の入力ディレクトリ（--merge-retry 時）",
     )
+    parser.add_argument(
+        "--merge-files",
+        nargs="*",
+        metavar="FILENAME",
+        help=(
+            "上書き統合する .accdb / .mdb のファイル名のみ指定"
+            "（省略時は再解析側の全ファイル）"
+        ),
+    )
     args = parser.parse_args()
     workspace_dir = _default_workspace()
 
@@ -107,6 +129,7 @@ def main() -> None:
         exit_code = run_merge_retry(
             workspace_dir / args.output,
             workspace_dir / args.retry_output,
+            merge_files=args.merge_files,
         )
         sys.exit(exit_code)
 

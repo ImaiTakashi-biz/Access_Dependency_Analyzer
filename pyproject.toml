@@ -27,6 +27,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/access_dependency_analyzer"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"assets" = "access_dependency_analyzer/assets"
+
 [dependency-groups]
 dev = [
     "pytest>=8.0,<9",

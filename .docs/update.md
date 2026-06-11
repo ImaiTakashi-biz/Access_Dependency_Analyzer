@@ -20,3 +20,6 @@
 - 初回エラー3件（QRモニタDB / セット予定材料管理 / 協力会社委託加工処理品）の再解析を実施
 - `--merge-retry` で再解析 CSV を `output/analysis/` へ統合する機能を追加
 - 統合後の `report_for_ai.md` を再生成（40ファイル分の本文に再解析3件を反映）
+- レビュー高優先度対応: ACE 必須の README 明記、`assets/` パッケージ同梱、マージの `--merge-files` 化、フォーム SELECT 解析、AccessReader テスト追加
+- レビュー中優先度対応: `_INCOMPLETE.txt` 出力、`path_utils` によるパス正規化統一、Mermaid ノード ID 一意化、HTML オフライン表示（mermaid.min.js 同梱）
+- PostgreSQL 移行設計案を `output/analysis/postgresql_migration_plan.md` に出力

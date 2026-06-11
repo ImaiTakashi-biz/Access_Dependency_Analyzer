@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from access_dependency_analyzer.analyzers.dependency_analyzer import DependencyGraph
@@ -9,9 +10,11 @@ from access_dependency_analyzer.core.models import AccessFileDependency
 
 
 def _node_id(path_text: str) -> str:
+    """Mermaid ノード ID を生成する（同名ファイルの衝突を避ける）。"""
     stem = Path(path_text).stem
-    sanitized = "".join(char if char.isalnum() else "_" for char in stem)
-    return sanitized or "unknown"
+    sanitized = "".join(char if char.isalnum() else "_" for char in stem) or "node"
+    digest = hashlib.sha256(path_text.lower().encode("utf-8")).hexdigest()[:8]
+    return f"{sanitized}_{digest}"
 
 
 def build_mermaid_content(dependencies: list[AccessFileDependency]) -> str:

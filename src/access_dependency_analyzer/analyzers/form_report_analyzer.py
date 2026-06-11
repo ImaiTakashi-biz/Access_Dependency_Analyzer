@@ -6,6 +6,7 @@ import re
 
 from access_dependency_analyzer.core.models import FormInfo, ReportInfo
 from access_dependency_analyzer.readers.access_reader import RawFormDef, RawReportDef
+from access_dependency_analyzer.utils.sql_parser import extract_referenced_tables
 
 
 def _split_record_source(record_source: str) -> tuple[list[str], list[str]]:
@@ -15,7 +16,7 @@ def _split_record_source(record_source: str) -> tuple[list[str], list[str]]:
 
     source = record_source.strip()
     if re.match(r"^\s*SELECT\b", source, re.IGNORECASE):
-        return [], []
+        return extract_referenced_tables(source), []
 
     if " " in source:
         return [], [source]

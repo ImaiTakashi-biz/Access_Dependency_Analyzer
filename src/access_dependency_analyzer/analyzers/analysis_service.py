@@ -91,10 +91,12 @@ class AnalysisService:
                 if reader.warnings:
                     result.warnings.extend(reader.warnings)
 
-                if reader.backend == "pyodbc" and result.linked_tables:
+                if reader.backend == "pyodbc":
                     result.warnings.append(
-                        f"{file_path.name}: pyodbcモードではリンク接続文字列が取得できない場合があります。"
-                        " ACE + DAO 環境での再解析を推奨します。"
+                        f"{file_path.name}: pyodbcモードではリンクテーブル・クエリSQL・"
+                        "フォーム/レポートの取得が制限されます。"
+                        " リンク依存関係の解析には Microsoft Access Database Engine (ACE)"
+                        " による DAO 接続が必須です。"
                     )
         except Exception as error:
             message = f"{file_path.name}: {error}"

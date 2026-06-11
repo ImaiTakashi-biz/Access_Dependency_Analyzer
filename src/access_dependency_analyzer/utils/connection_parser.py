@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
+
+from access_dependency_analyzer.utils.path_utils import normalize_access_path_str
 
 
 DB_PATH_KEYS = (
@@ -12,14 +13,6 @@ DB_PATH_KEYS = (
     "data source",
     "dsn",
 )
-
-
-def normalize_access_path(path_text: str) -> str:
-    """Accessファイルパスを正規化する。"""
-    cleaned = path_text.strip().strip('"').strip("'")
-    if not cleaned:
-        return ""
-    return str(Path(cleaned).resolve())
 
 
 def extract_database_path(connection_string: str) -> str:
@@ -34,7 +27,7 @@ def extract_database_path(connection_string: str) -> str:
         if key.strip().lower() in DB_PATH_KEYS:
             candidate = value.strip()
             if candidate.lower().endswith((".accdb", ".mdb")):
-                return normalize_access_path(candidate)
+                return normalize_access_path_str(candidate)
     return ""
 
 

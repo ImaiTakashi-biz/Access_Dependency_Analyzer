@@ -15,7 +15,15 @@ def get_project_root() -> Path:
 
 
 def get_assets_dir() -> Path:
-    """静的リソースディレクトリを返す。"""
+    """静的リソースディレクトリを返す。
+
+    pip インストール時はパッケージ同梱の assets/ を優先し、
+    開発時はプロジェクトルートの assets/ にフォールバックする。
+    """
+    package_root = Path(__file__).resolve().parent.parent
+    package_assets = package_root / "assets"
+    if (package_assets / "ui" / "index.html").exists():
+        return package_assets
     return get_project_root() / "assets"
 
 

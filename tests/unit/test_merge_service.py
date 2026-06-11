@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from access_dependency_analyzer.analyzers.merge_service import merge_analysis_results
+from access_dependency_analyzer.analyzers.merge_service import (
+    collect_file_names_from_result,
+    merge_analysis_results,
+)
 from access_dependency_analyzer.core.models import (
     AnalysisResult,
     QueryInfo,
@@ -58,7 +61,11 @@ def test_merge_analysis_results_replaces_retry_files() -> None:
         ],
     )
 
-    merged = merge_analysis_results(base, supplemental)
+    merged = merge_analysis_results(
+        base,
+        supplemental,
+        replace_file_names=frozenset({"QRモニタDB.accdb"}),
+    )
 
     table_names = {table.table_name for table in merged.tables}
     assert "old_table" not in table_names
@@ -66,4 +73,20 @@ def test_merge_analysis_results_replaces_retry_files() -> None:
     assert "t_現品票履歴" in table_names
     assert merged.queries[0].query_name == "Q_履歴"
     assert merged.errors == []
-    assert len(merged.warnings) == 1
+
+
+def test_collect_file_names_from_result() -> None:
+    result = AnalysisResult(
+        source_files=[r"C:\data\foo.accdb"],
+        tables=[
+            TableInfo(
+                access_file=r"\\server\share\bar.accdb",
+                table_name="t_1",
+                is_linked=False,
+                record_count=1,
+                primary_key="",
+            )
+        ],
+    )
+    names = collect_file_names_from_result(result)
+    assert names == frozenset({"foo.accdb", "bar.accdb"})

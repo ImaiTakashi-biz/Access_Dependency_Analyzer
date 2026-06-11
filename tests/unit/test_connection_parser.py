@@ -26,3 +26,10 @@ def test_extract_target_table_from_source_table_name() -> None:
 def test_extract_target_table_from_connect() -> None:
     connect = "DATABASE=C:\\data\\製品マスタ.accdb;TABLE=T_製品;"
     assert extract_target_table(connect, "") == "T_製品"
+
+
+def test_extract_database_path_from_unc() -> None:
+    connect = r"DATABASE=\\192.168.1.200\share\master.accdb;TABLE=T_製品;"
+    path = extract_database_path(connect)
+    assert path.startswith("\\\\")
+    assert path.endswith("master.accdb")
