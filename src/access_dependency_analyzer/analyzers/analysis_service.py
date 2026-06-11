@@ -88,6 +88,9 @@ class AnalysisService:
                 )
                 vba_module_names = reader.read_vba_module_names()
 
+                if reader.warnings:
+                    result.warnings.extend(reader.warnings)
+
                 if reader.backend == "pyodbc" and result.linked_tables:
                     result.warnings.append(
                         f"{file_path.name}: pyodbcモードではリンク接続文字列が取得できない場合があります。"

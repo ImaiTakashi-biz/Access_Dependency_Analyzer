@@ -79,6 +79,7 @@ class AccessReader:
         self._engine: Any | None = None
         self._database: Any | None = None
         self._backend = "none"
+        self.warnings: list[str] = []
 
     def __enter__(self) -> AccessReader:
         self.open()
@@ -207,8 +208,18 @@ class AccessReader:
             if self._is_system_object(name):
                 continue
 
-            fields = self._read_fields_dao(table_def)
-            primary_key = self._read_primary_key_dao(table_def)
+            try:
+                fields = self._read_fields_dao(table_def)
+                primary_key = self._read_primary_key_dao(table_def)
+            except Exception as error:
+                message = (
+                    f"{self.file_path.name}: テーブル定義の取得をスキップしました"
+                    f" ({name}): {error}"
+                )
+                logger.warning(message)
+                self.warnings.append(message)
+                continue
+
             record_count = self._read_record_count_dao(name)
             tables.append(
                 RawTableDef(
