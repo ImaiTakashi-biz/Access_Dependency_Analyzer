@@ -1,0 +1,13 @@
+# 更新履歴
+
+## 2026-06-11
+
+- Access Dependency Analyzer の初版（MVP + VBA解析 + AIレポート）を実装
+- テーブル / リンクテーブル / クエリ解析
+- 依存関係グラフ（Markdown / Mermaid / HTML）出力
+- pywebview によるドラッグ＆ドロップ UI
+- `report_for_ai.md` 自動生成
+- プロジェクト構成を整理（`core/` `app/` `readers/` `assets/` `output/`）
+- 解析結果の既定出力先を `output/analysis/` に変更
+- `.gitignore` を追加
+- 不要ファイル削除（`__pycache__`、`.pytest_cache`、生成済み `output/analysis/`、`python-version.txt`）

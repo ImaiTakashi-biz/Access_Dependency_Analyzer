@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Dependency Analyzer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --border: #dbe3f0;
+      --success: #047857;
+      --error: #b91c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Meiryo, sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 220px);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .header {
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.06);
+    }
+
+    .dropzone {
+      border: 2px dashed #93c5fd;
+      border-radius: 14px;
+      padding: 40px 20px;
+      text-align: center;
+      background: #f8fbff;
+      transition: 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary {
+      background: #e5edff;
+      color: #1e3a8a;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .file-list {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+
+    .file-list h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eef2f7;
+      font-size: 14px;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .status.success {
+      color: var(--success);
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    .status.error {
+      color: var(--error);
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    .hint {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Access Dependency Analyzer</h1>
+      <p>
+        複数の Access ファイル（.accdb / .mdb）を解析し、テーブル・リンクテーブル・クエリ・依存関係を
+        <code>output/analysis/</code> フォルダへ出力します。PostgreSQL 移行計画のたたき台として利用できます。
+      </p>
+    </div>
+
+    <div class="card">
+      <div id="dropzone" class="dropzone">
+        <strong>Accessファイルをドラッグ＆ドロップ</strong>
+        <span>または下の「ファイル選択」ボタンから複数ファイルを指定</span>
+      </div>
+
+      <div class="actions">
+        <button id="selectButton" class="secondary" type="button">ファイル選択</button>
+        <button id="analyzeButton" class="primary" type="button" disabled>解析開始</button>
+        <button id="clearButton" class="secondary" type="button" disabled>クリア</button>
+      </div>
+
+      <div class="file-list">
+        <h2>選択ファイル</h2>
+        <div id="fileList">
+          <div class="file-item"><span>ファイルが選択されていません</span></div>
+        </div>
+      </div>
+
+      <div id="status" class="status">解析待機中です。</div>
+
+      <p class="hint">
+        推奨環境: Windows + Microsoft Access Database Engine (ACE)。<br>
+        Access Runtime が無い環境でも、ACE と oletools により可能な範囲で解析します。
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const selectedFiles = [];
+
+    const dropzone = document.getElementById("dropzone");
+    const fileList = document.getElementById("fileList");
+    const statusBox = document.getElementById("status");
+    const analyzeButton = document.getElementById("analyzeButton");
+    const clearButton = document.getElementById("clearButton");
+    const selectButton = document.getElementById("selectButton");
+
+    function renderFileList() {
+      if (selectedFiles.length === 0) {
+        fileList.innerHTML = '<div class="file-item"><span>ファイルが選択されていません</span></div>';
+        analyzeButton.disabled = true;
+        clearButton.disabled = true;
+        return;
+      }
+
+      fileList.innerHTML = selectedFiles
+        .map((filePath) => `<div class="file-item"><span>${filePath}</span></div>`)
+        .join("");
+      analyzeButton.disabled = false;
+      clearButton.disabled = false;
+    }
+
+    function setStatus(message, type = "") {
+      statusBox.textContent = message;
+      statusBox.className = "status" + (type ? ` ${type}` : "");
+    }
+
+    function addFiles(paths) {
+      for (const filePath of paths) {
+        const lower = filePath.toLowerCase();
+        if (!lower.endsWith(".accdb") && !lower.endsWith(".mdb")) {
+          continue;
+        }
+        if (!selectedFiles.includes(filePath)) {
+          selectedFiles.push(filePath);
+        }
+      }
+      renderFileList();
+    }
+
+    async function chooseFiles() {
+      try {
+        const paths = await window.pywebview.api.choose_files();
+        if (paths && paths.length > 0) {
+          addFiles(paths);
+          setStatus(`${paths.length} 件のファイルを追加しました。`);
+        }
+      } catch (error) {
+        setStatus(`ファイル選択に失敗しました: ${error}`, "error");
+      }
+    }
+
+    async function startAnalysis() {
+      if (selectedFiles.length === 0) {
+        setStatus("解析対象ファイルがありません。", "error");
+        return;
+      }
+
+      analyzeButton.disabled = true;
+      selectButton.disabled = true;
+      clearButton.disabled = true;
+      setStatus("解析を実行中です。しばらくお待ちください...");
+
+      try {
+        const response = await window.pywebview.api.analyze_files(selectedFiles);
+        if (response.success) {
+          setStatus(response.message, "success");
+        } else {
+          setStatus(response.message, "error");
+        }
+      } catch (error) {
+        setStatus(`解析に失敗しました: ${error}`, "error");
+      } finally {
+        analyzeButton.disabled = selectedFiles.length === 0;
+        selectButton.disabled = false;
+        clearButton.disabled = selectedFiles.length === 0;
+      }
+    }
+
+    dropzone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("dragover");
+      const paths = Array.from(event.dataTransfer.files).map((file) => file.path);
+      addFiles(paths);
+      setStatus(`${paths.length} 件ドロップされました。`);
+    });
+
+    dropzone.addEventListener("click", chooseFiles);
+    selectButton.addEventListener("click", chooseFiles);
+    analyzeButton.addEventListener("click", startAnalysis);
+    clearButton.addEventListener("click", () => {
+      selectedFiles.length = 0;
+      renderFileList();
+      setStatus("ファイル一覧をクリアしました。");
+    });
+
+    window.addEventListener("pywebviewready", () => {
+      setStatus("準備完了。Accessファイルを選択してください。");
+    });
+  </script>
+</body>
+</html>
