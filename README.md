@@ -122,6 +122,16 @@ python -m access_dependency_analyzer --files "C:\data\製品マスタ.accdb" "C:
 python -m access_dependency_analyzer --files "C:\data\製品マスタ.accdb" --output output/analysis
 ```
 
+一部ファイルだけ再解析した結果を、既存の一括解析出力へ統合する場合:
+
+```powershell
+python -m access_dependency_analyzer --merge-retry
+```
+
+- 統合先（既定）: `output/analysis/`
+- 再解析入力（既定）: `output/retry_analysis/`
+- `report_for_ai.md` / 各 CSV / 依存関係図を再生成します
+
 ## 出力ファイル
 
 `output/analysis/` フォルダに以下を生成します。
@@ -142,8 +152,9 @@ python -m access_dependency_analyzer --files "C:\data\製品マスタ.accdb" --o
 ## PostgreSQL 移行での使い方
 
 1. 社内の関連 Access ファイルをまとめて解析
-2. `output/analysis/report_for_ai.md` を AI に渡す
-3. AI に以下を依頼
+2. エラーが出たファイルは個別に再解析し、`--merge-retry` で統合
+3. `output/analysis/report_for_ai.md` と `tables.csv` 等を AI に渡す
+4. AI に以下を依頼
    - PostgreSQL スキーマ設計
    - 移行順序
    - 共通マスタ設計

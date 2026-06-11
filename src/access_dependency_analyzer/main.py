@@ -9,6 +9,7 @@ from pathlib import Path
 import webview
 
 from access_dependency_analyzer.analyzers.analysis_service import AnalysisService
+from access_dependency_analyzer.analyzers.merge_service import MergeService
 from access_dependency_analyzer.app.api import AnalyzerApi
 from access_dependency_analyzer.app.drag_drop import bind_file_drop
 from access_dependency_analyzer.core.constants import (
@@ -38,6 +39,24 @@ def run_gui(workspace_dir: Path) -> None:
     )
 
     webview.start(bind_file_drop, window, gui="edgechromium")
+
+
+def run_merge_retry(base_output: Path, retry_output: Path) -> int:
+    """再解析結果をメイン出力へ統合する。"""
+    service = MergeService()
+    result = service.merge_retry_into_base(base_output, retry_output)
+    print(f"統合先: {base_output.resolve()}")
+    print(f"Accessファイル数: {len(result.source_files)}")
+    print(f"テーブル: {len(result.tables)}")
+    print(f"リンクテーブル: {len(result.linked_tables)}")
+    print(f"クエリ: {len(result.queries)}")
+    print(f"VBA: {len(result.vba_modules)}")
+    print(f"依存関係: {len(result.dependencies)}")
+    if result.warnings:
+        print("警告:")
+        for message in result.warnings:
+            print(f"  - {message}")
+    return 0
 
 
 def run_cli(file_paths: list[str], output_dir: Path) -> int:
@@ -71,8 +90,25 @@ def main() -> None:
         default=DEFAULT_OUTPUT_DIR,
         help=f"出力先ディレクトリ（既定: {DEFAULT_OUTPUT_DIR}）",
     )
+    parser.add_argument(
+        "--merge-retry",
+        action="store_true",
+        help="再解析結果（output/retry_analysis）をメイン出力へ統合する",
+    )
+    parser.add_argument(
+        "--retry-output",
+        default="output/retry_analysis",
+        help="再解析 CSV の入力ディレクトリ（--merge-retry 時）",
+    )
     args = parser.parse_args()
     workspace_dir = _default_workspace()
+
+    if args.merge_retry:
+        exit_code = run_merge_retry(
+            workspace_dir / args.output,
+            workspace_dir / args.retry_output,
+        )
+        sys.exit(exit_code)
 
     if args.files:
         exit_code = run_cli(args.files, workspace_dir / args.output)
