@@ -10,6 +10,7 @@ import webview
 
 from access_dependency_analyzer.analyzers.analysis_service import AnalysisService
 from access_dependency_analyzer.app.api import AnalyzerApi
+from access_dependency_analyzer.app.drag_drop import bind_file_drop
 from access_dependency_analyzer.core.constants import (
     APP_NAME,
     DEFAULT_OUTPUT_DIR,
@@ -35,7 +36,8 @@ def run_gui(workspace_dir: Path) -> None:
         height=760,
         min_size=(900, 640),
     )
-    webview.start(gui="edgechromium")
+
+    webview.start(bind_file_drop, window, gui="edgechromium")
 
 
 def run_cli(file_paths: list[str], output_dir: Path) -> int:

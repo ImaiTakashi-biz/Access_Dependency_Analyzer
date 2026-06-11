@@ -159,7 +159,8 @@ pytest
 - Windows 専用です（DAO / pyodbc 前提）
 - ACE 未導入環境では解析範囲が限定されます
 - pyodbc モードではリンク接続文字列が取得できない場合があります
-- VBA は oletools による抽出のため、難読化や破損ファイルでは取得できない場合があります
+- VBA は pyOpenVBA / DAO / oletools の順で抽出を試行します
+- DAO 利用時は Access の「VBA プロジェクト オブジェクト モデルへのアクセスを信頼する」設定が必要な場合があります
 - `output/` 配下は解析のたびに上書き生成されます（`.gitignore` 対象）
 
 ## 依存ライブラリ
@@ -169,4 +170,5 @@ pytest
 | pywebview | デスクトップ UI |
 | pywin32 | DAO による Access 読み取り |
 | pyodbc | ODBC による Access 読み取り（フォールバック） |
-| oletools | VBA モジュール抽出 |
+| pyOpenVBA | `.accdb` / `.mdb` の VBA 抽出（Access 不要） |
+| oletools | VBA 抽出フォールバック |

@@ -11,3 +11,5 @@
 - 解析結果の既定出力先を `output/analysis/` に変更
 - `.gitignore` を追加
 - 不要ファイル削除（`__pycache__`、`.pytest_cache`、生成済み `output/analysis/`、`python-version.txt`）
+- pywebview 向けドラッグ＆ドロップ修正（`pywebviewFullPath` 経由でファイル受付）
+- VBA 抽出を多段化（pyOpenVBA → DAO → oletools）

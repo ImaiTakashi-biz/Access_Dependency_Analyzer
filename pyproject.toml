@@ -9,6 +9,7 @@ dependencies = [
     "pywin32>=306; sys_platform == 'win32'",
     "pyodbc>=5.0",
     "oletools>=0.60",
+    "pyOpenVBA>=3.0",
 ]
 
 [project.scripts]

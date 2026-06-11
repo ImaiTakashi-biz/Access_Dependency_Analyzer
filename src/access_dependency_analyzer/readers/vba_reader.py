@@ -1,54 +1,70 @@
-"""VBAモジュール読み取り（oletools）。"""
+"""VBAモジュール読み取り（複数バックエンド）。"""
 
 from __future__ import annotations
 
 import logging
-import zipfile
-from dataclasses import dataclass
+from collections.abc import Callable
 from pathlib import Path
 
-logger = logging.getLogger("access_dependency_analyzer.reader.vba")
+from access_dependency_analyzer.readers.vba_dao_reader import read_vba_modules_via_dao
+from access_dependency_analyzer.readers.vba_oletools_reader import (
+    read_vba_modules_via_oletools,
+)
+from access_dependency_analyzer.readers.vba_pyopenvba_reader import (
+    read_vba_modules_via_pyopenvba,
+)
+from access_dependency_analyzer.readers.vba_types import RawVbaModule
+
+logger = logging.getLogger("access_dependency_analyzer.readers.vba")
 
 
-@dataclass
-class RawVbaModule:
-    """VBAモジュールの生データ。"""
-
-    name: str
-    code: str
+def _vba_backends() -> tuple[tuple[str, Callable[[str | Path], list[RawVbaModule]]], ...]:
+    """利用可能な VBA 抽出バックエンド一覧。"""
+    return (
+        ("pyopenvba", read_vba_modules_via_pyopenvba),
+        ("dao", read_vba_modules_via_dao),
+        ("oletools", read_vba_modules_via_oletools),
+    )
 
 
 def read_vba_modules(file_path: str | Path) -> list[RawVbaModule]:
-    """AccessファイルからVBAモジュールを抽出する。"""
-    path = Path(file_path).resolve()
-    modules: list[RawVbaModule] = []
+    """Accessファイルから VBA モジュールを抽出する。
 
-    try:
-        from oletools.olevba import VBA_Parser  # type: ignore[import-untyped]
-    except ImportError:
-        logger.error("oletools がインストールされていません")
-        return modules
+    優先順位:
+    1. pyOpenVBA - .accdb / .mdb 向け純 Python 解析（Access 不要）
+    2. DAO / Access COM - Access 導入環境向け
+    3. oletools - レガシー形式向けフォールバック
+    """
+    path = Path(file_path)
+    failures: list[str] = []
 
-    try:
-        parser = VBA_Parser(str(path))
-        if not parser.detect_vba_macros():
-            logger.info("VBAマクロは検出されませんでした: %s", path.name)
-            parser.close()
+    for backend_name, reader in _vba_backends():
+        try:
+            modules = reader(path)
+        except Exception as error:
+            message = f"{backend_name}: {error}"
+            failures.append(message)
+            logger.debug("VBA backend 失敗 (%s)", message, exc_info=True)
+            continue
+
+        if modules:
+            logger.info(
+                "VBA抽出完了 (%s): backend=%s, modules=%d",
+                path.name,
+                backend_name,
+                len(modules),
+            )
             return modules
 
-        for (_, _, macro_name, vba_code) in parser.extract_macros():
-            if not vba_code:
-                continue
-            modules.append(
-                RawVbaModule(
-                    name=str(macro_name),
-                    code=vba_code.decode("utf-8", errors="replace"),
-                )
-            )
-        parser.close()
-    except zipfile.BadZipFile:
-        logger.warning("ZIP形式ではないため oletools 解析をスキップ: %s", path.name)
-    except Exception as error:
-        logger.error("VBA抽出に失敗しました (%s): %s", path.name, error)
+        failures.append(f"{backend_name}: モジュールなし")
 
-    return modules
+    if failures:
+        logger.warning(
+            "VBA抽出に失敗しました (%s): %s",
+            path.name,
+            " / ".join(failures),
+        )
+    else:
+        logger.info("VBAマクロは検出されませんでした: %s", path.name)
+
+    return []

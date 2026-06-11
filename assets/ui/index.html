@@ -234,16 +234,32 @@
     }
 
     function addFiles(paths) {
+      let addedCount = 0;
       for (const filePath of paths) {
+        if (!filePath) {
+          continue;
+        }
         const lower = filePath.toLowerCase();
         if (!lower.endsWith(".accdb") && !lower.endsWith(".mdb")) {
           continue;
         }
         if (!selectedFiles.includes(filePath)) {
           selectedFiles.push(filePath);
+          addedCount += 1;
         }
       }
       renderFileList();
+      return addedCount;
+    }
+
+    // pywebview からドロップされたファイルを受け取る
+    function addFilesFromNative(paths) {
+      const addedCount = addFiles(paths);
+      if (addedCount > 0) {
+        setStatus(`${addedCount} 件のファイルをドロップで追加しました。`);
+      } else if (paths.length > 0) {
+        setStatus("ドロップされたファイルはすべて追加済みです。", "error");
+      }
     }
 
     async function chooseFiles() {
@@ -294,12 +310,10 @@
       dropzone.classList.remove("dragover");
     });
 
+    // ドロップ処理は Python 側（pywebview DOMEventHandler）で行う
     dropzone.addEventListener("drop", (event) => {
       event.preventDefault();
       dropzone.classList.remove("dragover");
-      const paths = Array.from(event.dataTransfer.files).map((file) => file.path);
-      addFiles(paths);
-      setStatus(`${paths.length} 件ドロップされました。`);
     });
 
     dropzone.addEventListener("click", chooseFiles);

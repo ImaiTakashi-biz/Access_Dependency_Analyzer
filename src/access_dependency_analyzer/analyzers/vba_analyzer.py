@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from access_dependency_analyzer.core.models import VbaModuleInfo
-from access_dependency_analyzer.readers.vba_reader import RawVbaModule
+from access_dependency_analyzer.readers.vba_types import RawVbaModule
 from access_dependency_analyzer.utils.sql_parser import (
     extract_api_usages,
     extract_sql_strings_from_vba,
