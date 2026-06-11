@@ -1,5 +1,11 @@
-pywebview>=5.0
+# Access Dependency Analyzer - 実行時依存（Python 3.12 専用）
+# インストール: pip install -r requirements.txt && pip install -e .
+
+pywebview>=5.0,<7
 pywin32>=306; sys_platform == 'win32'
-pyodbc>=5.0
-oletools>=0.60
-pyOpenVBA>=3.0
+pyodbc>=5.0,<6
+oletools>=0.60,<1
+pyOpenVBA>=3.0,<4
+
+# 開発・テスト用（任意）
+# pytest>=8.0,<9

@@ -9,7 +9,7 @@ from access_dependency_analyzer.readers.vba_reader import read_vba_modules
 from access_dependency_analyzer.readers.vba_types import RawVbaModule
 
 
-def test_read_vba_modules_uses_first_successful_backend() -> None:
+def test_read_vba_modules_uses_pyopenvba_before_dao() -> None:
     file_path = Path(r"C:\data\sample.accdb")
 
     with (
@@ -23,15 +23,14 @@ def test_read_vba_modules_uses_first_successful_backend() -> None:
         ) as dao_mock,
         patch(
             "access_dependency_analyzer.readers.vba_reader.read_vba_modules_via_oletools",
-            return_value=[RawVbaModule(name="Module2", code="ignored")],
         ) as oletools_mock,
     ):
-        modules = read_vba_modules(file_path)
+        modules = read_vba_modules(file_path, known_module_names=["Module1"])
 
     assert len(modules) == 1
     assert modules[0].name == "Module1"
-    pyopenvba_mock.assert_called_once_with(file_path)
-    dao_mock.assert_called_once_with(file_path)
+    pyopenvba_mock.assert_called_once()
+    dao_mock.assert_called_once()
     oletools_mock.assert_not_called()
 
 

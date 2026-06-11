@@ -35,9 +35,11 @@ Access_Dependency_Analyzer/
 │   ├── conftest.py
 │   └── unit/               # 単体テスト
 ├── .gitignore
+├── .python-version         # pyenv / uv 用（3.12）
 ├── AGENTS.md
 ├── README.md
 ├── pyproject.toml          # プロジェクト定義・依存関係
+├── python-version.txt      # 使用 Python バージョン（3.12）
 └── requirements.txt        # pip 用依存関係一覧
 ```
 
@@ -46,7 +48,7 @@ Access_Dependency_Analyzer/
 | 項目 | 内容 |
 |---|---|
 | OS | Windows 10 以降 |
-| Python | 3.12 以上 |
+| Python | **3.12 のみ**（3.12.x） |
 | パッケージ管理 | [uv](https://github.com/astral-sh/uv)（推奨）または pip |
 | 推奨コンポーネント | [Microsoft Access Database Engine (ACE)](https://www.microsoft.com/en-us/download/details.aspx?id=54920) 2016 以降 |
 
@@ -72,11 +74,11 @@ uv pip install pytest
 
 ```powershell
 cd C:\Users\SEIZOU20\PythonProjects\Access_Dependency_Analyzer
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
+python --version   # Python 3.12.x であることを確認
 pip install -r requirements.txt
-pip install -e .
-pip install pytest
+pip install -e ".[dev]"
 ```
 
 > `requirements.txt` は実行に必要なライブラリ一覧です。  
@@ -165,10 +167,10 @@ pytest
 
 ## 依存ライブラリ
 
-| ライブラリ | 用途 |
-|---|---|
-| pywebview | デスクトップ UI |
-| pywin32 | DAO による Access 読み取り |
-| pyodbc | ODBC による Access 読み取り（フォールバック） |
-| pyOpenVBA | `.accdb` / `.mdb` の VBA 抽出（Access 不要） |
-| oletools | VBA 抽出フォールバック |
+| ライブラリ | 用途 | バージョン目安 |
+|---|---|---|
+| pywebview | デスクトップ UI | 5.x〜6.x |
+| pywin32 | DAO による Access 読み取り | 312+ |
+| pyodbc | ODBC による Access 読み取り（フォールバック） | 5.x |
+| pyOpenVBA | `.accdb` / `.mdb` の VBA 抽出 | 3.x |
+| oletools | VBA 抽出フォールバック（`.mdb`） | 0.60.x |

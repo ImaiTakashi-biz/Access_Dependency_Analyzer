@@ -13,3 +13,6 @@
 - 不要ファイル削除（`__pycache__`、`.pytest_cache`、生成済み `output/analysis/`、`python-version.txt`）
 - pywebview 向けドラッグ＆ドロップ修正（`pywebviewFullPath` 経由でファイル受付）
 - VBA 抽出を多段化（pyOpenVBA → DAO → oletools）
+- ネットワークパス UNC 対応（ローカルコピー経由で pyOpenVBA 解析）
+- MSysObjects から VBA モジュール名を事前取得
+- Python 3.12 専用化、依存パッケージのバージョン範囲を整理

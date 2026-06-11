@@ -52,7 +52,7 @@ class AnalysisService:
     def _normalize_input_paths(self, file_paths: list[str | Path]) -> list[Path]:
         paths: list[Path] = []
         for file_path in file_paths:
-            path = Path(file_path).resolve()
+            path = Path(file_path)
             if path.suffix.lower() not in SUPPORTED_EXTENSIONS:
                 raise ValueError(f"未対応のファイル形式です: {path}")
             paths.append(path)
@@ -70,6 +70,8 @@ class AnalysisService:
         access_file = str(file_path)
         logger.info("解析開始: %s", access_file)
 
+        vba_module_names: list[str] = []
+
         try:
             with AccessReader(file_path) as reader:
                 raw_tables = reader.read_tables()
@@ -84,6 +86,7 @@ class AnalysisService:
                 result.reports.extend(
                     analyze_reports(access_file, reader.read_reports())
                 )
+                vba_module_names = reader.read_vba_module_names()
 
                 if reader.backend == "pyodbc" and result.linked_tables:
                     result.warnings.append(
@@ -96,8 +99,17 @@ class AnalysisService:
             result.errors.append(message)
 
         try:
-            raw_vba = read_vba_modules(file_path)
+            raw_vba = read_vba_modules(
+                file_path,
+                known_module_names=vba_module_names,
+            )
             result.vba_modules.extend(analyze_vba_modules(access_file, raw_vba))
+            if vba_module_names and not raw_vba:
+                result.warnings.append(
+                    f"{file_path.name}: MSysObjects 上に VBA モジュール {len(vba_module_names)} 件あるが"
+                    " ソースコードを取得できませんでした。"
+                    " Access の VBA 信頼設定を確認するか、ファイルをローカルへコピーして再解析してください。"
+                )
         except Exception as error:
             message = f"{file_path.name} VBA解析: {error}"
             logger.warning(message)

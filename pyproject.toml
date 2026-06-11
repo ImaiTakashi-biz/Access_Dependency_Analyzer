@@ -3,13 +3,18 @@ name = "access-dependency-analyzer"
 version = "0.1.0"
 description = "Microsoft Access 依存関係解析ツール（PostgreSQL移行支援）"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-    "pywebview>=5.0",
+    "pywebview>=5.0,<7",
     "pywin32>=306; sys_platform == 'win32'",
-    "pyodbc>=5.0",
-    "oletools>=0.60",
-    "pyOpenVBA>=3.0",
+    "pyodbc>=5.0,<6",
+    "oletools>=0.60,<1",
+    "pyOpenVBA>=3.0,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9",
 ]
 
 [project.scripts]
@@ -23,7 +28,9 @@ build-backend = "hatchling.build"
 packages = ["src/access_dependency_analyzer"]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "pytest>=8.0,<9",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]

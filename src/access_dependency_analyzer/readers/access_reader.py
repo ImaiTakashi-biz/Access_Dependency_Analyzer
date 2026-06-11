@@ -406,3 +406,77 @@ class AccessReader:
         except Exception:
             logger.debug("MSysQueriesからSQL取得失敗: %s", view_name, exc_info=True)
         return ""
+
+    def read_vba_module_names(self) -> list[str]:
+        """VBA モジュール名一覧を取得する（Containers → MSysObjects の順）。"""
+        self.open()
+        if self._backend != "dao":
+            return []
+
+        names = self._read_module_names_from_containers()
+        if names:
+            return names
+
+        return self._read_module_names_from_msysobjects()
+
+    def _read_module_names_from_containers(self) -> list[str]:
+        """DAO Containers からモジュール名を取得する。"""
+        assert self._database is not None
+        names: list[str] = []
+        seen: set[str] = set()
+
+        for container_name in ("Modules", "Scripts"):
+            try:
+                container = self._database.Containers(container_name)
+                for index in range(container.Documents.Count):
+                    document = container.Documents(index)
+                    name = str(document.Name).strip()
+                    if not name or name.startswith("~") or name in seen:
+                        continue
+                    seen.add(name)
+                    names.append(name)
+            except Exception as error:
+                logger.debug(
+                    "Containers(%s) からの取得に失敗 (%s): %s",
+                    container_name,
+                    self.file_path.name,
+                    error,
+                )
+
+        if names:
+            logger.info(
+                "Containers からモジュール名を取得: %s (%d 件)",
+                self.file_path.name,
+                len(names),
+            )
+        return sorted(names)
+
+    def _read_module_names_from_msysobjects(self) -> list[str]:
+        """MSysObjects から VBA モジュール名一覧を取得する。"""
+        assert self._database is not None
+        names: list[str] = []
+        try:
+            recordset = self._database.OpenRecordset(
+                "SELECT Name FROM MSysObjects "
+                "WHERE Type = -32761 AND Left([Name], 1) <> '~' "
+                "ORDER BY Name"
+            )
+            while not recordset.EOF:
+                name = str(recordset.Fields("Name").Value or "").strip()
+                if name:
+                    names.append(name)
+                recordset.MoveNext()
+            recordset.Close()
+            if names:
+                logger.info(
+                    "MSysObjects から VBA モジュール名を取得: %s (%d 件)",
+                    self.file_path.name,
+                    len(names),
+                )
+        except Exception as error:
+            logger.warning(
+                "MSysObjects から VBA モジュール名を取得できませんでした (%s): %s",
+                self.file_path.name,
+                error,
+            )
+        return names
